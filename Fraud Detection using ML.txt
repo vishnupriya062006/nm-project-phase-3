@@ -1,0 +1,64 @@
+# Fraud Detection Using Machine Learning in Google Colab
+ 
+ import pandas as pd
+ import numpy as np
+ import matplotlib.pyplot as plt
+ import seaborn as sns
+ from sklearn.model_selection import train_test_split
+ from sklearn.preprocessing import StandardScaler
+ from sklearn.linear_model import LogisticRegression
+ from sklearn.ensemble import RandomForestClassifier
+ from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+ 
+ # Load Dataset
+ df = pd.read_csv("creditcard_synthetic.csv")
+ print("Dataset loaded. Shape:", df.shape)
+ 
+ # Check for missing values
+ print("Missing values:", df.isnull().sum().sum())
+ 
+ # EDA - Class Distribution
+ sns.countplot(data=df, x="Class")
+ plt.title("Class Distribution")
+ plt.show()
+ 
+ # Normalize 'Amount' and 'Time'
+ scaler = StandardScaler()
+ df[["Amount", "Time"]] = scaler.fit_transform(df[["Amount", "Time"]])
+ 
+ # Features and target
+ X = df.drop("Class", axis=1)
+ y = df["Class"]
+ 
+ # Train-test split
+ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+ 
+ # Logistic Regression Model
+ lr = LogisticRegression()
+ lr.fit(X_train, y_train)
+ y_pred_lr = lr.predict(X_test)
+ print("Logistic Regression Report:")
+ print(classification_report(y_test, y_pred_lr))
+ 
+ # Random Forest Model
+ rf = RandomForestClassifier(n_estimators=100, random_state=42)
+ rf.fit(X_train, y_train)
+ y_pred_rf = rf.predict(X_test)
+ print("Random Forest Report:")
+ print(classification_report(y_test, y_pred_rf))
+ 
+ # Confusion Matrix
+ sns.heatmap(confusion_matrix(y_test, y_pred_rf), annot=True, fmt="d")
+ plt.title("Random Forest Confusion Matrix")
+ plt.show()
+ 
+ # ROC Curve
+ y_score_rf = rf.predict_proba(X_test)[:, 1]
+ fpr, tpr, _ = roc_curve(y_test, y_score_rf)
+ plt.plot(fpr, tpr, label=f"Random Forest AUC: {roc_auc_score(y_test, y_score_rf):.2f}")
+ plt.plot([0, 1], [0, 1], linestyle="--")
+ plt.xlabel("False Positive Rate")
+ plt.ylabel("True Positive Rate")
+ plt.title("ROC Curve")
+ plt.legend()
+ plt.show()
